@@ -4,6 +4,11 @@ const app = document.querySelector("#app");
 const isFilePreview = location.protocol === "file:";
 const params = new URLSearchParams(location.search);
 const isEmbedded = params.get("embed") === "1" || params.get("mode") === "embed";
+const dashboardOrigin = params.get("dashboard") || "https://ai-dashboard.hkqlhnet.com";
+const dashboardUser = params.get("user") || "NewAPI 用户";
+const dashboardGroup = params.get("group") || "默认分组";
+const returnUrl = params.get("return_url") || dashboardOrigin;
+const basePath = location.pathname.includes("/newapi-agent-center") ? "/newapi-agent-center" : "";
 
 const storageKey = "newapi-agent-center-v1";
 const todayKey = new Date().toISOString().slice(0, 10);
@@ -87,7 +92,7 @@ const scenarios = [
 ];
 
 const defaultState = {
-  credits: 86000,
+  credits: Number(params.get("quota")) || 86000,
   usedToday: 7200,
   selectedGroup: "all",
   selectedScenarioId: "writing",
@@ -118,7 +123,12 @@ const defaultState = {
 
 function loadState() {
   try {
-    return { ...defaultState, ...JSON.parse(localStorage.getItem(storageKey) || "{}") };
+    const stored = JSON.parse(localStorage.getItem(storageKey) || "{}");
+    return {
+      ...defaultState,
+      ...stored,
+      credits: params.has("quota") ? Number(params.get("quota")) || defaultState.credits : stored.credits || defaultState.credits
+    };
   } catch {
     return defaultState;
   }
@@ -143,7 +153,8 @@ function getCurrentRoute() {
     const hashRoute = decodeURIComponent(location.hash.replace(/^#/, ""));
     return hashRoute.startsWith("/") ? hashRoute : "/";
   }
-  return location.pathname === "/" ? "/" : location.pathname;
+  const path = location.pathname.startsWith(basePath) ? location.pathname.slice(basePath.length) || "/" : location.pathname;
+  return path === "/" ? "/" : path;
 }
 
 state.route = getCurrentRoute();
@@ -160,7 +171,7 @@ function navigate(path) {
   if (isFilePreview) {
     location.hash = path;
   } else {
-    history.pushState({}, "", path);
+    history.pushState({}, "", `${basePath}${path}`);
   }
   state.route = path;
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -220,25 +231,52 @@ function setTemplate(id) {
 }
 
 function routeShell(content) {
-  return `<div class="app-shell ${isEmbedded ? "embedded" : ""}">
-    ${Header()}
-    <div class="layout">
-      ${!isEmbedded ? SideNav() : ""}
-      ${content}
+  return `<div class="app-shell ${isEmbedded ? "embedded" : "dashboard-mode"}">
+    ${!isEmbedded ? DashboardSidebar() : ""}
+    <div class="dashboard-main">
+      ${DashboardTopbar()}
+      ${Header()}
+      <div class="layout">
+        ${!isEmbedded ? SideNav() : ""}
+        ${content}
+      </div>
     </div>
     ${MobileNav()}
     ${state.toast ? `<div class="toast">${state.toast}</div>` : ""}
   </div>`;
 }
 
+function DashboardSidebar() {
+  const items = ["控制台总览", "令牌管理", "模型广场", "渠道分组", "调用日志", "余额中心", "AI 应用中心"];
+  return `<aside class="dashboard-sidebar">
+    <div class="dashboard-brand"><span>AI</span><strong>NewAPI</strong></div>
+    <nav>${items.map((item) => `<button class="${item === "AI 应用中心" ? "active" : ""}">${item}</button>`).join("")}</nav>
+  </aside>`;
+}
+
+function DashboardTopbar() {
+  return `<div class="dashboard-topbar">
+    <div>
+      <span>控制台</span><b>/</b><strong>AI 应用中心</strong>
+      <small>${isEmbedded ? "iframe 嵌入模式" : "独立地址模拟 dashboard 容器"}</small>
+    </div>
+    <div class="dashboard-user">
+      <span>${dashboardGroup}</span>
+      <strong>${escapeHtml(dashboardUser)}</strong>
+    </div>
+  </div>`;
+}
+
 function Header() {
   return `<header class="header">
     <div>
-      <p class="eyebrow">NewAPI Value Apps · ${todayKey}</p>
+      <p class="eyebrow">NewAPI Dashboard Add-on · ${todayKey}</p>
       <h1>AI 应用中心</h1>
+      <p class="header-subtitle">复用 ${dashboardOrigin.replace(/^https?:\/\//, "")} 的登录、额度、模型和调用日志。</p>
     </div>
     <div class="header-actions">
       <span class="quota-pill">剩余 ${numberText(state.credits)}</span>
+      <button class="secondary-action" data-open-dashboard>返回主平台</button>
       <button class="secondary-action" data-nav="/integration">嵌入配置</button>
     </div>
   </header>`;
@@ -269,13 +307,27 @@ function StatGrid() {
   </section>`;
 }
 
+function DashboardBridge() {
+  return `<section class="bridge-panel">
+    <div>
+      <p class="eyebrow">主平台交互模拟</p>
+      <h2>作为 ai-dashboard 的“增值服务”菜单运行</h2>
+      <p>主平台负责登录、充值、模型路由和审计；本模块只负责场景模板、调用编排和结果沉淀。嵌入时可通过 URL 参数传入 user、quota、group、return_url。</p>
+    </div>
+    <div class="bridge-flow">
+      <span>Dashboard 菜单</span><b>→</b><span>AI 应用中心</span><b>→</b><span>NewAPI 代理</span><b>→</b><span>调用日志</span>
+    </div>
+  </section>`;
+}
+
 function HomePage() {
   return routeShell(`<main class="content">
+    ${DashboardBridge()}
     <section class="intro-panel">
       <div>
-        <p class="eyebrow">定位</p>
+        <p class="eyebrow">增值模块</p>
         <h2>把 token 平台包装成用户能直接使用的 Agent 场景</h2>
-        <p>用户从现有 dashboard 进入这里，选择任务、填写表单、生成结果；登录、充值、额度、模型列表继续复用主平台，新增模块只负责场景编排和结果沉淀。</p>
+        <p>用户从现有 dashboard 进入这里，选择任务、填写表单、生成结果；生成前展示预计消耗，生成后回写调用日志和额度流水。</p>
       </div>
       <button class="primary-action" data-nav="/workspace">打开工作台</button>
     </section>
@@ -312,7 +364,7 @@ function WorkspacePage() {
         <p>${scenario.summary}</p>
       </div>
       <div class="estimate">
-        <span>预计消耗</span>
+        <span>预计从主平台扣减</span>
         <strong>${numberText(scenario.cost)}</strong>
       </div>
     </section>
@@ -324,6 +376,7 @@ function WorkspacePage() {
         </button>`).join("")}
       </aside>
       <section class="runner-panel">
+        <div class="sync-strip"><span>用户：${escapeHtml(dashboardUser)}</span><span>模型分组：${escapeHtml(dashboardGroup)}</span><span>日志：生成后同步</span></div>
         <form id="agent-form">
           <div class="form-head">
             <h3>${template.title}</h3>
@@ -473,7 +526,7 @@ function BillingPage() {
     <section class="page-title">
       <p class="eyebrow">复用主平台能力</p>
       <h2>额度与计费</h2>
-      <p>这里不重新做充值和订单，只展示必要额度，并把购买动作跳回 ai-dashboard.hkqlhnet.com。</p>
+      <p>这里不重新做充值和订单，只展示必要额度，并把购买动作跳回 ${dashboardOrigin.replace(/^https?:\/\//, "")}。</p>
     </section>
     <section class="billing-grid">
       <article><span>当前剩余额度</span><strong>${numberText(state.credits)}</strong></article>
@@ -487,17 +540,19 @@ function BillingPage() {
       <div><span>模型路由</span><b>继续走 NewAPI 渠道和分组</b></div>
       <div><span>消耗日志</span><b>写入主平台调用日志或同步任务</b></div>
     </section>
+    <button class="primary-action" data-open-dashboard>返回主平台充值 / 查看明细</button>
   </main>`);
 }
 
 function IntegrationPage() {
   const origin = location.origin === "null" ? "https://agent.yourdomain.com" : location.origin;
-  const embedUrl = `${origin}/?embed=1`;
+  const pathPrefix = basePath || "";
+  const embedUrl = `${origin}${pathPrefix}/?embed=1&user={{user_id}}&quota={{quota}}&group={{group}}&return_url=${encodeURIComponent(dashboardOrigin)}`;
   return routeShell(`<main class="content">
     <section class="page-title">
       <p class="eyebrow">独立地址 + 可嵌入</p>
       <h2>接入 ai-dashboard.hkqlhnet.com</h2>
-      <p>第一期建议主平台增加一个“AI 应用中心”菜单，打开独立地址；需要无缝体验时再 iframe 嵌入并接入 SSO。</p>
+      <p>推荐在主平台左侧菜单新增“AI 应用中心”：先 iframe 嵌入，后端再补 SSO 校验和 /api/agent 代理。</p>
     </section>
     <section class="integration-grid">
       <article>
@@ -507,8 +562,8 @@ function IntegrationPage() {
       </article>
       <article>
         <h3>iframe 嵌入</h3>
-        <p>嵌入主平台的增值模块，使用 embed 模式隐藏侧边导航。</p>
-        <code>&lt;iframe src="${embedUrl}" /&gt;</code>
+        <p>嵌入主平台的增值模块，使用 embed 模式隐藏外层导航，并传入用户与额度。</p>
+        <code>&lt;iframe src="${embedUrl}" style="width:100%;height:100%;border:0" /&gt;</code>
       </article>
       <article>
         <h3>后端接口</h3>
@@ -519,9 +574,9 @@ function IntegrationPage() {
     <section class="roadmap">
       <h3>落地路线</h3>
       <ol>
-        <li>一期：场景模板、工作台、历史、额度展示、NewAPI 代理。</li>
-        <li>二期：文件上传解析、团队空间、后台配置模板。</li>
-        <li>三期：行业 Agent、套餐权益、管理员上架和数据看板。</li>
+        <li>一期：iframe 菜单、场景模板、额度展示、NewAPI 代理、结果历史。</li>
+        <li>二期：SSO 签名校验、真实额度扣减、调用日志回写、后台模板配置。</li>
+        <li>三期：文件上传解析、行业 Agent、套餐权益和场景数据看板。</li>
       </ol>
     </section>
   </main>`);
@@ -563,6 +618,9 @@ function bindEvents() {
     await navigator.clipboard.writeText(state.result);
     toast("结果已复制");
   });
+  document.querySelectorAll("[data-open-dashboard]").forEach((el) => el.addEventListener("click", () => {
+    window.open(returnUrl, "_blank", "noopener,noreferrer");
+  }));
 }
 
 function render() {

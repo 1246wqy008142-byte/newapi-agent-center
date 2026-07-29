@@ -8,7 +8,8 @@
 - Agent 工作台
 - 使用历史
 - 额度展示
-- Dashboard 嵌入说明
+- 模拟 ai-dashboard 容器交互
+- Dashboard iframe 嵌入说明
 - NewAPI 服务端代理示例
 
 ## 本地运行
@@ -27,8 +28,26 @@ http://127.0.0.1:5173/
 嵌入模式：
 
 ```text
-http://127.0.0.1:5173/?embed=1
+http://127.0.0.1:5173/?embed=1&user=demo&quota=86000&group=default
 ```
+
+## ai-dashboard 接入建议
+
+在 `https://ai-dashboard.hkqlhnet.com/` 左侧菜单增加“AI 应用中心”，使用 iframe 嵌入：
+
+```html
+<iframe
+  src="https://1246wqy008142-byte.github.io/newapi-agent-center/?embed=1&user={{user_id}}&quota={{quota}}&group={{group}}&return_url=https%3A%2F%2Fai-dashboard.hkqlhnet.com"
+  style="width:100%;height:100%;border:0"
+></iframe>
+```
+
+建议复用主平台能力：
+
+- 登录态：主平台生成短期签名，Agent 后端验证。
+- 额度：主平台传入展示额度，真实扣减由服务端完成。
+- 模型：继续走 NewAPI 模型分组和渠道策略。
+- 日志：`/api/agent` 代理在服务端写入调用日志。
 
 ## 构建
 
