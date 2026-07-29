@@ -171,7 +171,8 @@ function navigate(path) {
   if (isFilePreview) {
     location.hash = path;
   } else {
-    history.pushState({}, "", `${basePath}${path}`);
+    const query = location.search || "";
+    history.pushState({}, "", `${basePath}${path}${query}`);
   }
   state.route = path;
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -349,7 +350,7 @@ function ScenarioCard(item) {
     <p>${item.summary}</p>
     <div class="card-meta">${item.audience}</div>
     <div class="template-list">${item.templates.slice(0, 3).map((template) => `<span>${template.title}</span>`).join("")}</div>
-    <button class="primary-action" data-scenario="${item.id}">使用场景</button>
+    <button class="primary-action scenario-action" data-scenario="${item.id}">使用场景</button>
   </article>`;
 }
 
@@ -569,6 +570,23 @@ function IntegrationPage() {
         <h3>后端接口</h3>
         <p>前端请求 /api/agent，服务端再调用 NewAPI，避免浏览器暴露 token。</p>
         <code>POST /api/agent</code>
+      </article>
+    </section>
+    <section class="integration-grid compact">
+      <article>
+        <h3>在线预览</h3>
+        <p>用于直接发给其他人体验，默认显示模拟 dashboard 容器。</p>
+        <code>https://1246wqy008142-byte.github.io/newapi-agent-center/</code>
+      </article>
+      <article>
+        <h3>嵌入预览</h3>
+        <p>用于验证 iframe 状态，导航会自动隐藏。</p>
+        <code>https://1246wqy008142-byte.github.io/newapi-agent-center/?embed=1&user=demo&quota=86000&group=default</code>
+      </article>
+      <article>
+        <h3>安全说明</h3>
+        <p>页面只加载同源构建资源，不在前端保存 NewAPI token；生产调用走服务端代理。</p>
+        <code>no frontend token / no mixed content</code>
       </article>
     </section>
     <section class="roadmap">
