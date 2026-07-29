@@ -1,0 +1,14 @@
+{
+  "name": "ai-learning-platform",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "test:prototype": "node scripts/prototype-flow-check.mjs"
+  },
+  "devDependencies": {
+    "vite": "^7.0.0"
+  }
+}
