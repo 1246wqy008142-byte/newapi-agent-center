@@ -53,6 +53,7 @@ for (const feature of requiredFeatures) {
 }
 
 add("本地 file 预览支持 hash 路由", app.includes("location.protocol === \"file:\"") && app.includes("location.hash = path"));
+add("GitHub Pages 使用 hash 路由避免子路径 404", app.includes("location.hostname.endsWith(\"github.io\")") && app.includes("rootPath") && app.includes("#${path}"));
 add("导航包含五个落地入口", app.includes("应用") && app.includes("工作台") && app.includes("历史") && app.includes("额度") && app.includes("嵌入"));
 add("额度与历史使用本地持久化", app.includes("localStorage.setItem(storageKey") && app.includes("state.history.unshift"));
 add("GitHub Pages 子路径路由兼容", app.includes("newapi-agent-center") && app.includes("`${basePath}${path}${query}`"));

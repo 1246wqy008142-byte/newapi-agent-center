@@ -10,6 +10,7 @@ const dashboardGroup = params.get("group") || "默认分组";
 const returnUrl = params.get("return_url") || dashboardOrigin;
 const basePath = location.pathname.includes("/newapi-agent-center") ? "/newapi-agent-center" : "";
 const dashboardHost = dashboardOrigin.replace(/^https?:\/\//, "").replace(/\/$/, "");
+const useHashRouting = isFilePreview || location.hostname.endsWith("github.io");
 
 const storageKey = "newapi-agent-center-v1";
 const todayKey = new Date().toISOString().slice(0, 10);
@@ -150,9 +151,9 @@ function saveState() {
 }
 
 function getCurrentRoute() {
-  if (isFilePreview) {
+  if (useHashRouting) {
     const hashRoute = decodeURIComponent(location.hash.replace(/^#/, ""));
-    return hashRoute.startsWith("/") ? hashRoute : "/";
+    if (hashRoute.startsWith("/")) return hashRoute;
   }
   const path = location.pathname.startsWith(basePath) ? location.pathname.slice(basePath.length) || "/" : location.pathname;
   return path === "/" ? "/" : path;
@@ -171,6 +172,10 @@ const navItems = [
 function navigate(path) {
   if (isFilePreview) {
     location.hash = path;
+  } else if (useHashRouting) {
+    const query = location.search || "";
+    const rootPath = basePath ? `${basePath}/` : "/";
+    history.pushState({}, "", `${rootPath}${query}#${path}`);
   } else {
     const query = location.search || "";
     history.pushState({}, "", `${basePath}${path}${query}`);
