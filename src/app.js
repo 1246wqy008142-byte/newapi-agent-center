@@ -162,11 +162,11 @@ function getCurrentRoute() {
 state.route = getCurrentRoute();
 
 const navItems = [
-  ["/", "⌂", "应用"],
+  ["/", "⌂", "市场"],
   ["/workspace", "✦", "工作台"],
   ["/history", "▤", "历史"],
   ["/billing", "◷", "额度"],
-  ["/integration", "↗", "嵌入"]
+  ["/integration", "↗", "接入"]
 ];
 
 function navigate(path) {
@@ -238,10 +238,9 @@ function setTemplate(id) {
 }
 
 function routeShell(content) {
-  return `<div class="app-shell ${isEmbedded ? "embedded" : "module-mode"}">
-    ${!isEmbedded ? DashboardTopbar() : ""}
+  return `<div class="app-shell ${isEmbedded ? "embedded" : "market-mode"}">
+    ${!isEmbedded ? MarketTopbar() : ""}
     <div class="dashboard-main">
-      ${Header()}
       <div class="layout">
         ${!isEmbedded ? SideNav() : ""}
         ${content}
@@ -252,46 +251,16 @@ function routeShell(content) {
   </div>`;
 }
 
-function DashboardSidebar() {
-  const items = ["控制台总览", "令牌管理", "模型广场", "渠道分组", "调用日志", "余额中心", "AI 应用中心"];
-  return `<aside class="dashboard-sidebar">
-    <div class="dashboard-brand"><span>AI</span><strong>千禄匯 AI</strong></div>
-    <nav>${items.map((item) => `<button class="${item === "AI 应用中心" ? "active" : ""}">${item}</button>`).join("")}</nav>
-  </aside>`;
-}
-
-function DashboardTopbar() {
-  const nav = [
-    ["首页", "/"],
-    ["控制台", "/workspace"],
-    ["模型广场", "/"],
-    ["文档", "/integration"]
-  ];
-  return `<div class="dashboard-topbar">
-    <button class="brand-button" data-nav="/" aria-label="返回应用中心首页">
-      <span class="brand-mark">AI</span><strong>千禄匯 AI</strong>
+function MarketTopbar() {
+  return `<header class="market-topbar">
+    <button class="market-brand" data-nav="/" aria-label="返回应用市场">
+      <span>AI</span>
+      <div><strong>应用市场</strong><small>Agent 场景增值模块</small></div>
     </button>
-    <nav class="top-links">${nav.map(([label, path]) => `<button class="${label === "首页" && state.route === "/" ? "active" : path === state.route && label !== "模型广场" ? "active" : ""}" data-nav="${path}">${label}</button>`).join("")}</nav>
-    <div class="top-tools" aria-label="平台工具">
-      <button title="语言">文</button>
-      <button title="主题">◐</button>
-      <button title="通知">○</button>
-      <span>${escapeHtml(dashboardUser).slice(0, 1).toUpperCase() || "N"}</span>
-    </div>
-  </div>`;
-}
-
-function Header() {
-  return `<header class="header">
-    <div>
-      <p class="eyebrow">AI Dashboard Add-on · ${todayKey}</p>
-      <h1>AI 应用中心</h1>
-      <p class="header-subtitle">复用 ${dashboardHost} 的登录、额度、模型和调用日志。</p>
-    </div>
-    <div class="header-actions">
+    <div class="market-topbar-actions">
       <span class="quota-pill">剩余 ${numberText(state.credits)}</span>
       <button class="secondary-action" data-open-dashboard>返回主平台</button>
-      <button class="secondary-action" data-nav="/integration">嵌入配置</button>
+      <button class="primary-action" data-nav="/workspace">打开工作台</button>
     </div>
   </header>`;
 }
@@ -324,9 +293,9 @@ function StatGrid() {
 function DashboardBridge() {
   return `<section class="bridge-panel">
     <div>
-      <p class="eyebrow">主平台交互模拟</p>
-      <h2>作为 ${dashboardHost} 的增值服务入口运行</h2>
-      <p>主平台负责登录、充值、模型路由和审计；本模块只负责场景模板、调用编排和结果沉淀。嵌入时可通过 URL 参数传入 user、quota、group、return_url。</p>
+      <p class="eyebrow">接入说明</p>
+      <h2>应用市场作为 ${dashboardHost} 的独立增值模块</h2>
+      <p>主平台继续负责登录、充值、模型路由和审计；应用市场只负责场景模板、调用编排和结果沉淀。嵌入时可通过 URL 参数传入 user、quota、group、return_url。</p>
     </div>
     <div class="bridge-flow">
       <span>Dashboard 菜单</span><b>→</b><span>AI 应用中心</span><b>→</b><span>NewAPI 代理</span><b>→</b><span>调用日志</span>
@@ -335,45 +304,46 @@ function DashboardBridge() {
 }
 
 function HomePage() {
-  if (isEmbedded) {
-    return routeShell(`<main class="content">
-      ${DashboardBridge()}
+  return routeShell(`<main class="content market-content">
+      ${!isEmbedded ? MarketHero() : EmbeddedMarketHeader()}
       ${ScenarioHub()}
     </main>`);
-  }
-  return `<div class="app-shell landing-shell">
-    ${DashboardTopbar()}
-    <main class="landing-main">
-      <section class="hero-section">
-        <div class="hero-copy">
-          <span class="foundation-pill"><i></i>人工智能应用基座</span>
-          <h1>统一 API 网关，服务于<br><em>海量 AI 模型</em></h1>
-          <p>通过统一、标准的接口协议接入海量模型。承载 AI 应用，高效管理数字资产，连接未来。</p>
-          <div class="hero-actions">
-            <button class="hero-primary" data-nav="/workspace">前往仪表板 <span>→</span></button>
-            <button class="hero-secondary" data-nav="/integration">嵌入文档</button>
-          </div>
-        </div>
-        <div class="hero-console" aria-label="AI 应用中心概览">
-          <div class="console-head"><span></span><span></span><span></span><strong>AI 应用中心</strong></div>
-          ${StatGrid()}
-          <div class="console-flow">
-            <span>登录态</span><b>→</b><span>场景模板</span><b>→</b><span>NewAPI</span><b>→</b><span>调用日志</span>
-          </div>
-        </div>
-      </section>
-      ${ScenarioHub()}
-    </main>
-    ${state.toast ? `<div class="toast">${state.toast}</div>` : ""}
-  </div>`;
+}
+
+function MarketHero() {
+  return `<section class="market-hero">
+    <div>
+      <p class="eyebrow">Agent Marketplace · ${todayKey}</p>
+      <h1>应用市场</h1>
+      <p>把 NewAPI token 能力包装成开箱即用的业务场景。用户选择应用、填写信息、生成结果；额度和日志仍由主平台承接。</p>
+    </div>
+    <div class="market-summary">
+      <span>当前用户</span><strong>${escapeHtml(dashboardUser)}</strong>
+      <span>模型分组</span><strong>${escapeHtml(dashboardGroup)}</strong>
+    </div>
+  </section>`;
+}
+
+function EmbeddedMarketHeader() {
+  return `<section class="embedded-market-header">
+    <div>
+      <p class="eyebrow">Agent Marketplace</p>
+      <h1>应用市场</h1>
+      <p>已接入主平台用户、分组和额度参数，可直接作为 dashboard 内部增值模块展示。</p>
+    </div>
+    <div class="market-summary">
+      <span>剩余额度</span><strong>${numberText(state.credits)}</strong>
+      <span>模型分组</span><strong>${escapeHtml(dashboardGroup)}</strong>
+    </div>
+  </section>`;
 }
 
 function ScenarioHub() {
-  return `<section class="intro-panel">
+  return `<section class="intro-panel market-intro">
       <div>
-        <p class="eyebrow">增值模块</p>
-        <h2>把 token 平台包装成用户能直接使用的 Agent 场景</h2>
-        <p>用户从现有 dashboard 进入这里，选择任务、填写表单、生成结果；生成前展示预计消耗，生成后回写调用日志和额度流水。</p>
+        <p class="eyebrow">可用应用</p>
+        <h2>按场景选择 Agent 应用</h2>
+        <p>第一期先切出市场和工作台，后续可把应用卡片、价格、上下架、行业模板做成后台可配置。</p>
       </div>
       <button class="primary-action" data-nav="/workspace">打开工作台</button>
     </section>
