@@ -9,6 +9,7 @@ const dashboardUser = params.get("user") || "NewAPI 用户";
 const dashboardGroup = params.get("group") || "默认分组";
 const returnUrl = params.get("return_url") || dashboardOrigin;
 const basePath = location.pathname.includes("/newapi-agent-center") ? "/newapi-agent-center" : "";
+const dashboardHost = dashboardOrigin.replace(/^https?:\/\//, "").replace(/\/$/, "");
 
 const storageKey = "newapi-agent-center-v1";
 const todayKey = new Date().toISOString().slice(0, 10);
@@ -232,10 +233,9 @@ function setTemplate(id) {
 }
 
 function routeShell(content) {
-  return `<div class="app-shell ${isEmbedded ? "embedded" : "dashboard-mode"}">
-    ${!isEmbedded ? DashboardSidebar() : ""}
+  return `<div class="app-shell ${isEmbedded ? "embedded" : "module-mode"}">
+    ${!isEmbedded ? DashboardTopbar() : ""}
     <div class="dashboard-main">
-      ${DashboardTopbar()}
       ${Header()}
       <div class="layout">
         ${!isEmbedded ? SideNav() : ""}
@@ -250,20 +250,28 @@ function routeShell(content) {
 function DashboardSidebar() {
   const items = ["控制台总览", "令牌管理", "模型广场", "渠道分组", "调用日志", "余额中心", "AI 应用中心"];
   return `<aside class="dashboard-sidebar">
-    <div class="dashboard-brand"><span>AI</span><strong>NewAPI</strong></div>
+    <div class="dashboard-brand"><span>AI</span><strong>千禄匯 AI</strong></div>
     <nav>${items.map((item) => `<button class="${item === "AI 应用中心" ? "active" : ""}">${item}</button>`).join("")}</nav>
   </aside>`;
 }
 
 function DashboardTopbar() {
+  const nav = [
+    ["首页", "/"],
+    ["控制台", "/workspace"],
+    ["模型广场", "/"],
+    ["文档", "/integration"]
+  ];
   return `<div class="dashboard-topbar">
-    <div>
-      <span>控制台</span><b>/</b><strong>AI 应用中心</strong>
-      <small>${isEmbedded ? "iframe 嵌入模式" : "独立地址模拟 dashboard 容器"}</small>
-    </div>
-    <div class="dashboard-user">
-      <span>${dashboardGroup}</span>
-      <strong>${escapeHtml(dashboardUser)}</strong>
+    <button class="brand-button" data-nav="/" aria-label="返回应用中心首页">
+      <span class="brand-mark">AI</span><strong>千禄匯 AI</strong>
+    </button>
+    <nav class="top-links">${nav.map(([label, path]) => `<button class="${label === "首页" && state.route === "/" ? "active" : path === state.route && label !== "模型广场" ? "active" : ""}" data-nav="${path}">${label}</button>`).join("")}</nav>
+    <div class="top-tools" aria-label="平台工具">
+      <button title="语言">文</button>
+      <button title="主题">◐</button>
+      <button title="通知">○</button>
+      <span>${escapeHtml(dashboardUser).slice(0, 1).toUpperCase() || "N"}</span>
     </div>
   </div>`;
 }
@@ -271,9 +279,9 @@ function DashboardTopbar() {
 function Header() {
   return `<header class="header">
     <div>
-      <p class="eyebrow">NewAPI Dashboard Add-on · ${todayKey}</p>
+      <p class="eyebrow">AI Dashboard Add-on · ${todayKey}</p>
       <h1>AI 应用中心</h1>
-      <p class="header-subtitle">复用 ${dashboardOrigin.replace(/^https?:\/\//, "")} 的登录、额度、模型和调用日志。</p>
+      <p class="header-subtitle">复用 ${dashboardHost} 的登录、额度、模型和调用日志。</p>
     </div>
     <div class="header-actions">
       <span class="quota-pill">剩余 ${numberText(state.credits)}</span>
@@ -312,7 +320,7 @@ function DashboardBridge() {
   return `<section class="bridge-panel">
     <div>
       <p class="eyebrow">主平台交互模拟</p>
-      <h2>作为 ai-dashboard 的“增值服务”菜单运行</h2>
+      <h2>作为 ${dashboardHost} 的增值服务入口运行</h2>
       <p>主平台负责登录、充值、模型路由和审计；本模块只负责场景模板、调用编排和结果沉淀。嵌入时可通过 URL 参数传入 user、quota、group、return_url。</p>
     </div>
     <div class="bridge-flow">
@@ -322,9 +330,41 @@ function DashboardBridge() {
 }
 
 function HomePage() {
-  return routeShell(`<main class="content">
-    ${DashboardBridge()}
-    <section class="intro-panel">
+  if (isEmbedded) {
+    return routeShell(`<main class="content">
+      ${DashboardBridge()}
+      ${ScenarioHub()}
+    </main>`);
+  }
+  return `<div class="app-shell landing-shell">
+    ${DashboardTopbar()}
+    <main class="landing-main">
+      <section class="hero-section">
+        <div class="hero-copy">
+          <span class="foundation-pill"><i></i>人工智能应用基座</span>
+          <h1>统一 API 网关，服务于<br><em>海量 AI 模型</em></h1>
+          <p>通过统一、标准的接口协议接入海量模型。承载 AI 应用，高效管理数字资产，连接未来。</p>
+          <div class="hero-actions">
+            <button class="hero-primary" data-nav="/workspace">前往仪表板 <span>→</span></button>
+            <button class="hero-secondary" data-nav="/integration">嵌入文档</button>
+          </div>
+        </div>
+        <div class="hero-console" aria-label="AI 应用中心概览">
+          <div class="console-head"><span></span><span></span><span></span><strong>AI 应用中心</strong></div>
+          ${StatGrid()}
+          <div class="console-flow">
+            <span>登录态</span><b>→</b><span>场景模板</span><b>→</b><span>NewAPI</span><b>→</b><span>调用日志</span>
+          </div>
+        </div>
+      </section>
+      ${ScenarioHub()}
+    </main>
+    ${state.toast ? `<div class="toast">${state.toast}</div>` : ""}
+  </div>`;
+}
+
+function ScenarioHub() {
+  return `<section class="intro-panel">
       <div>
         <p class="eyebrow">增值模块</p>
         <h2>把 token 平台包装成用户能直接使用的 Agent 场景</h2>
@@ -336,8 +376,7 @@ function HomePage() {
     <section class="toolbar">
       ${scenarioGroups.map((group) => `<button class="${state.selectedGroup === group.id ? "active" : ""}" data-group="${group.id}">${group.label}</button>`).join("")}
     </section>
-    <section class="scenario-grid">${filteredScenarios().map(ScenarioCard).join("")}</section>
-  </main>`);
+    <section class="scenario-grid">${filteredScenarios().map(ScenarioCard).join("")}</section>`;
 }
 
 function ScenarioCard(item) {
@@ -426,8 +465,8 @@ function escapeHtml(value) {
 }
 
 function aiEndpoint() {
+  if (params.get("agent_endpoint")) return params.get("agent_endpoint");
   if (window.AGENT_AI_ENDPOINT) return window.AGENT_AI_ENDPOINT;
-  if (location.protocol !== "file:") return "/api/agent";
   return "";
 }
 
