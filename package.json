@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "vite build",
+    "build": "vite build && node scripts/prepare-pages.mjs",
     "test:prototype": "node scripts/prototype-flow-check.mjs"
   },
   "devDependencies": {

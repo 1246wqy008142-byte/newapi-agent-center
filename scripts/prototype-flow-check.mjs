@@ -9,6 +9,7 @@ const css = read("src/styles.css");
 const html = read("index.html");
 const aiProxyExample = read("server/ai-proxy.example.mjs");
 const distHtml = existsSync(join(root, "dist/index.html")) ? read("dist/index.html") : "";
+const distFallbackHtml = existsSync(join(root, "dist/404.html")) ? read("dist/404.html") : "";
 
 const checks = [];
 const add = (name, pass) => checks.push({ name, pass: Boolean(pass) });
@@ -68,6 +69,7 @@ add("首页无内联端点配置脚本", !html.includes("window.AGENT_AI_ENDPOIN
 add("样式采用主站入口与模块布局", css.includes(".landing-shell") && css.includes(".hero-section") && css.includes(".bridge-panel") && css.includes(".work-grid"));
 add("布局防横向溢出", css.includes("overflow-x: hidden") && css.includes("@media (max-width: 1260px)") && css.includes("grid-template-columns: 1fr"));
 add("dist 入口存在", existsSync(join(root, "dist/index.html")));
+add("GitHub Pages 子路由回退存在", distFallbackHtml.includes("AI 应用中心") && distFallbackHtml.includes("src=\"./assets/"));
 add("dist 不包含非 HTTPS 或第三方脚本", !distHtml.includes("http://") && !distHtml.includes("fonts.googleapis.com") && !distHtml.includes("unpkg.com"));
 
 const forbiddenLegacy = ["AI 综合学习平台", "学习导师", "成长档案", "知识雷达"];
